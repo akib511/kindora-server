@@ -227,6 +227,30 @@ app.get("/joined-events/:email", async (req, res) => {
 });
 
 
+
+// Get 6 nearest upcoming events
+app.get("/recent-events", async (req, res) => {
+  try {
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Dhaka",
+    }).format(new Date());
+
+    const recentEvents = await eventsCollections
+      .find({ date: { $gte: today } })
+      .sort({ date: 1 })
+      .limit(6)
+      .toArray();
+
+    res.send(recentEvents);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to get recent events",
+      error: error.message,
+    });
+  }
+});
+
+
 app.get("/", (req, res) => {
   res.send("wellcome to kindora server");
 });
