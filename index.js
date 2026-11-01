@@ -35,12 +35,27 @@ const joinedEventsCollections = db.collection("joinedEvents");
 
 
 
+// Create Event
 app.post("/events", async (req, res) => {
-  const eventData = req.body;
+  try {
+    const eventData = req.body;
 
-  const result = await eventsCollections.insertOne(eventData);
+    if (!eventData.creatorEmail) {
+      return res.status(400).send({ message: "creatorEmail (user email) is required" });
+    }
 
-  res.send(result);
+    const result = await eventsCollections.insertOne({
+      ...eventData,
+      createdAt: new Date(),
+    });
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to create event",
+      error: error.message,
+    });
+  }
 });
 
 
@@ -91,21 +106,35 @@ app.get("/events/:id", async (req, res) => {
 
 
 // Delete Event
+
 app.delete("/events/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const { userEmail } = req.query;
 
-    const { ObjectId } = await import("mongodb");
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid event id" });
+    }
 
-    const result = await eventsCollections.deleteOne({
-      _id: new ObjectId(id),
-    });
+    if (!userEmail) {
+      return res.status(400).send({ message: "userEmail is required" });
+    }
 
-    if (result.deletedCount === 0) {
-      return res.status(404).send({
-        message: "Event not found",
+    const event = await eventsCollections.findOne({ _id: new ObjectId(id) });
+
+    if (!event) {
+      return res.status(404).send({ message: "Event not found" });
+    }
+
+    if (event.creatorEmail !== userEmail) {
+      return res.status(403).send({
+        message: "You are not allowed to delete this event",
       });
     }
+
+    const result = await eventsCollections.deleteOne({ _id: new ObjectId(id) });
+
+    await joinedEventsCollections.deleteMany({ eventId: new ObjectId(id) });
 
     res.send({
       message: "Event deleted successfully",
@@ -119,26 +148,40 @@ app.delete("/events/:id", async (req, res) => {
   }
 });
 
-
-
-// Update Event
+// Update Event 
 app.put("/events/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const eventData = req.body;
+    const { userEmail, ...eventData } = req.body;
 
-    const { ObjectId } = await import("mongodb");
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid event id" });
+    }
+
+    if (!userEmail) {
+      return res.status(400).send({ message: "userEmail is required" });
+    }
+
+    const event = await eventsCollections.findOne({ _id: new ObjectId(id) });
+
+    if (!event) {
+      return res.status(404).send({ message: "Event not found" });
+    }
+
+    if (event.creatorEmail !== userEmail) {
+      return res.status(403).send({
+        message: "You are not allowed to edit this event",
+      });
+    }
+
+  
+    delete eventData._id;
+    delete eventData.creatorEmail;
 
     const result = await eventsCollections.updateOne(
       { _id: new ObjectId(id) },
       { $set: eventData }
     );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).send({
-        message: "Event not found",
-      });
-    }
 
     res.send({
       message: "Event updated successfully",
@@ -151,7 +194,6 @@ app.put("/events/:id", async (req, res) => {
     });
   }
 });
-
 
 // Join Event
 app.post("/join-event", async (req, res) => {
@@ -283,6 +325,25 @@ app.get("/recent-events", async (req, res) => {
   } catch (error) {
     res.status(500).send({
       message: "Failed to get recent events",
+      error: error.message,
+    });
+  }
+});
+
+
+
+// Get events created by a specific user 
+app.get("/my-events/:email", async (req, res) => {
+  try {
+    const result = await eventsCollections
+      .find({ creatorEmail: req.params.email })
+      .sort({ date: 1 })
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to get your events",
       error: error.message,
     });
   }
