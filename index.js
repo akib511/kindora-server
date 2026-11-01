@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import 'dotenv/config'
 import express from "express";
 import cors from "cors"
@@ -226,6 +226,44 @@ app.get("/joined-events/:email", async (req, res) => {
   }
 });
 
+
+
+
+// Leave Event
+app.delete("/leave-event/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userEmail } = req.query;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid joined event id" });
+    }
+
+    if (!userEmail) {
+      return res.status(400).send({ message: "userEmail is required" });
+    }
+
+    const result = await joinedEventsCollections.deleteOne({
+      _id: new ObjectId(id),
+      userEmail: userEmail,
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({
+        message: "Joined event not found",
+      });
+    }
+
+    res.send({
+      message: "Successfully left the event",
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to leave event",
+      error: error.message,
+    });
+  }
+});
 
 
 // Get 6 nearest upcoming events
