@@ -271,7 +271,7 @@ app.get("/joined-events/:email", async (req, res) => {
 
 
 
-// Leave Event
+// Leave Event api
 app.delete("/leave-event/:id", async (req, res) => {
   try {
     const { id } = req.params;
