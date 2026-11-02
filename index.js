@@ -38,7 +38,7 @@ const verifyToken = async (req, res, next) => {
     res.status(401).send({ message: "Invalid or expired token" });
   }
 };
-// -------------------------------------------------------
+
 
 // ---------------- MongoDB connection ----------------
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -59,7 +59,7 @@ const db = connectClient.db("kindora");
 
 const eventsCollections = db.collection("events");
 const joinedEventsCollections = db.collection("joinedEvents");
-// ----------------------------------------------------
+
 
 // Aajker tarikh (Dhaka time, YYYY-MM-DD)
 const getToday = () =>
@@ -67,7 +67,7 @@ const getToday = () =>
     timeZone: "Asia/Dhaka",
   }).format(new Date());
 
-// ---------------- Create Event (secured) ----------------
+// Create Event (secured)
 app.post("/events", verifyToken, async (req, res) => {
   try {
     // Shudhu allowed field
@@ -113,7 +113,7 @@ app.post("/events", verifyToken, async (req, res) => {
   }
 });
 
-// ---------------- Get All Events ----------------
+//  Get All Events 
 app.get("/events", async (req, res) => {
   try {
     const result = await eventsCollections.find().toArray();
@@ -126,7 +126,7 @@ app.get("/events", async (req, res) => {
   }
 });
 
-// ---------------- Get Single Event ----------------
+//Get Single Event 
 app.get("/events/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -150,7 +150,7 @@ app.get("/events/:id", async (req, res) => {
   }
 });
 
-// ---------------- Delete Event (secured) ----------------
+// Delete Event (secured)
 app.delete("/events/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -192,7 +192,7 @@ app.delete("/events/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ---------------- Update Event (secured) ----------------
+//  Update Event (secured) 
 app.put("/events/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -256,7 +256,7 @@ app.put("/events/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ---------------- Join Event (secured) ----------------
+//  Join Event (secured) 
 app.post("/join-event", verifyToken, async (req, res) => {
   try {
     const { eventId } = req.body;
@@ -307,7 +307,7 @@ app.post("/join-event", verifyToken, async (req, res) => {
   }
 });
 
-// ---------------- Get my joined events (secured) ----------------
+//  Get my joined events (secured) 
 app.get("/joined-events", verifyToken, async (req, res) => {
   try {
     const email = req.user.email;
@@ -336,7 +336,7 @@ app.get("/joined-events", verifyToken, async (req, res) => {
   }
 });
 
-// ---------------- Leave Event (secured) ----------------
+//  Leave Event (secured) 
 app.delete("/leave-event/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -364,7 +364,7 @@ app.delete("/leave-event/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ---------------- Get 6 nearest upcoming events ----------------
+// Get 6 nearest upcoming events 
 app.get("/recent-events", async (req, res) => {
   try {
     const recentEvents = await eventsCollections
@@ -382,7 +382,7 @@ app.get("/recent-events", async (req, res) => {
   }
 });
 
-// ---------------- Get my created events (secured) ----------------
+// Get my created events (secured)
 app.get("/my-events", verifyToken, async (req, res) => {
   try {
     const result = await eventsCollections
